@@ -1,19 +1,22 @@
 module LambdaParse(
-
+  lambdaParse
 )where
 
 import Lambda
+import NameGiver
+
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
 
 import Control.Monad.State
+import Data.Map as Map
 
 -- This is adaped from the following tutorial:
 -- https://wiki.haskell.org/Parsing_a_simple_imperative_language
 
-data MedExp = App MedExp MedExp | Lambda String MedExp | Var String deriving(Show)
+data MedExp = MedApp MedExp MedExp | MedLambda String MedExp | MedVar String deriving(Show)
 
 languageDef =
   emptyDef { Token.commentStart    = "/*"
@@ -46,7 +49,7 @@ expression = seqOfExpression
 seqOfExpression =
   do list <- (sepBy1 expression' whiteSpace)
      -- If there's only one statement return it without using Seq.
-     return $ if length list == 1 then head list else foldl1 App list
+     return $ if length list == 1 then head list else foldl1 MedApp list
 
 expression' :: Parser MedExp
 expression' = (parens expression) <|> varExp <|> lamExp
@@ -64,28 +67,40 @@ expression' = (parens expression) <|> varExp <|> lamExp
 
 varExp :: Parser MedExp
 varExp = do varName <- identifier
-            return (Var varName)
+            return (MedVar varName)
 
 lamExp :: Parser MedExp
 lamExp = do reserved "l"
             varName <- identifier
             reservedOp "."
             e <- expression
-            return (Lambda varName e)
+            return (MedLambda varName e)
 
 appExp :: Parser MedExp
 appExp = do e1 <- expression
             e2 <- expression
-            return (App e1 e2)
+            return (MedApp e1 e2)
 
 parseMed :: String -> MedExp
 parseMed str =
-  case parse whileParser "" str of
+  case Text.ParserCombinators.Parsec.parse whileParser "" str of
     Left e  -> error $ show e
     Right r -> r
 
 
 -- final function converts string vars to Id vars
+type TypeState' = TypeState String Id
 
-varsConvertI :: MedExp -> WithUnique Id Exp
-varsConvertI (Var )
+varsConvertI :: MedExp -> TypeState' Exp
+varsConvertI (MedVar v) = do id <- getName v
+                             return (Var id)
+varsConvertI (MedApp me1 me2) = do e1 <- varsConvertI me1
+                                   e2 <- varsConvertI me2
+                                   return (App e1 e2)
+varsConvertI (MedLambda v me) = do id <- getName v
+                                   e <- varsConvertI me
+                                   return (Lam id e)
+
+lambdaParse :: String -> Exp
+lambdaParse str = evalState (varsConvertI (parseMed str)) (ids, Map.empty) where
+  ids = [Id n | n <- [0..]]

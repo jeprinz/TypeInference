@@ -87,29 +87,3 @@ typeToStringI (Var v) _ = do name <- getName v
 
 typeToString :: RegTree -> String
 typeToString t = evalState (typeToStringI t False) (['A'..'Z'], Map.empty)
-
--- getName :: Id -> TypeState Char
--- getName v = do vars <- getMap
---                case Map.lookup v vars of
---                     Just name -> return name
---                     Nothing -> do u <- unique
---                                   putMap (Map.insert v u vars)
---                                   return u
---
--- unique :: TypeState Char
--- unique = do (us, vars) <- get
---             put (tail us, vars)
---             return (head us)
---
--- getMap :: TypeState (Map Id Char)
--- getMap = do (us, vars) <- get
---             return vars
---
--- putMap :: Map Id Char -> TypeState ()
--- putMap newMap = do (us, _) <- get
---                    put (us, newMap)
---                    return ()
---
---     -- case Map.lookup v vars of
---     -- Just s -> return s
---     -- Nothing -> unique
