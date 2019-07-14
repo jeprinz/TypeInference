@@ -66,20 +66,24 @@ example3 = Mu (Id 0) (Mu (Id 1) (Var (Id 2)) (Var (Id 0))) (Var (Id 0))
 -- everthing below here is for converting types to strings
 type TypeState = State (String, Map Id Char)
 
-typeToStringI :: RegTree -> TypeState String
-typeToStringI (Mu v t1 t2) = do prefix <- if Set.member v (freeVars t1) || Set.member v (freeVars t2)
-                                then do var <- getName v
-                                        -- return ("μ" ++ [var] ++ ".")
-                                        return ("u" ++ [var] ++ ".")
-                                else return ""
-                                s1 <- typeToStringI t1
-                                s2 <- typeToStringI t2
-                                return (prefix ++ "(" ++ s1 ++ "->" ++ s2 ++ ")")
-typeToStringI (Var v) = do name <- getName v
-                           return [name]
+typeToStringI :: RegTree -> Bool -> TypeState String
+typeToStringI (Mu v t1 t2) parens = do
+    prefix <- if Set.member v (freeVars t1) || Set.member v (freeVars t2)
+                 then do var <- getName v
+                         -- return ("μ" ++ [var] ++ ".")
+                         return ("u" ++ [var] ++ ".")
+    else return ""
+    s1 <- typeToStringI t1 True
+    s2 <- typeToStringI t2 False
+    return (if parens then (prefix ++ "(" ++ s1 ++ "->" ++ s2 ++ ")")
+                      else (prefix ++ s1 ++ "->" ++ s2))
+
+
+typeToStringI (Var v) _ = do name <- getName v
+                             return [name]
 
 typeToString :: RegTree -> String
-typeToString t = evalState (typeToStringI t) (['A'..'Z'], Map.empty)
+typeToString t = evalState (typeToStringI t False) (['A'..'Z'], Map.empty)
 
 getName :: Id -> TypeState Char
 getName v = do vars <- getMap
