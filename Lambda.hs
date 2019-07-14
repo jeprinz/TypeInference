@@ -8,8 +8,3 @@ import RegTree
 
 data Id = Id Int deriving(Show)
 data Exp = Var Id | App Exp Exp | Lam Id Exp deriving(Show)
-
-type FreeVars = Map Id RegTree
-
-intersect :: FreeVars -> FreeVars -> FreeVars
-intersect = undefined

@@ -32,24 +32,37 @@ name :: RegTree -> Id
 name (Var v) = v
 name (Mu v _ _) = v
 
--- TODO: make this into List (Id, RegTree)
-type Substitutions = Map Id RegTree
+type Substitutions = [(Id, RegTree)]
 
 intersectI :: Set Id -> RegTree -> RegTree -> (RegTree, Substitutions)
 intersectI b t1 t2 = let x = name t1
                          y = name t2
-                     in if Set.member (Idx x y) b then (Var (Idx x y), Map.empty)
+                     in if Set.member (Idx x y) b then (Var (Idx x y), [])
                         else case (t1, t2) of
-                             ((Mu _ _ _), (Mu _ _ _)) -> (Mu (Idx x y) t1' t2', Map.union b1 b2) where
+                             ((Mu _ _ _), (Mu _ _ _)) -> (Mu (Idx x y) leftSide rightSide, subs) where
                                  b' = Set.insert (Idx x y) b
-                                 (t1', b1) = intersectI b' (left t1) (left t2)
-                                 (t2', b2) = intersectI b' (right t1) (right t2)
-                             ((Mu _ _ _), (Var y)) -> (t1, Map.insert y t1 Map.empty)
-                             ((Var x), (Mu _ _ _)) -> (t2, Map.insert x t2 Map.empty)
-                             ((Var x), (Var y)) -> (t1, Map.insert y t1 Map.empty)
+                                 (leftSide', subs1) = intersectI b' (left t1) (left t2)
+                                 -- t1right = applySubs subs1 (right t1)
+                                 -- t2right = applySubs subs1 (right t2)
+                                 t1right = (right t1)
+                                 t2right = (right t2)
+                                 (rightSide', subs2) = intersectI b' t1right t2right
+                                 subs = subs1 ++ subs2
+                                 leftSide = applySubs subs leftSide'
+                                 rightSide = applySubs subs rightSide'
+                             ((Mu x _ _), (Var y)) -> (t1', [(y, t1')]) where
+                                 t1' = replace t1 y (Var x)
+                             ((Var x), (Mu y _ _)) -> (t2', [(x, t2')]) where
+                                 t2' = replace t2 x (Var y)
+                             ((Var x), (Var y)) -> (t1, [(y, t1)])
+
+applySubs :: Substitutions -> RegTree -> RegTree
+applySubs [] t = t
+applySubs ((i, v) : ss) t = replace (applySubs ss t) i v
 
 intersect :: RegTree -> RegTree -> (RegTree, Substitutions)
-intersect = intersectI Set.empty
+intersect t1 t2 = let (t, subs) = intersectI Set.empty t1 t2 in
+                      ((applySubs subs t), subs)
 
 freeVarsI :: RegTree -> Set Id -> Set Id
 freeVarsI (Var v) bound = if Set.member v bound then Set.empty else Set.singleton v
@@ -64,6 +77,13 @@ example = Mu (Id 0) (Var (Id 0)) (Var (Id 0))
 example2 = Mu (Id 0) (Mu (Id 1) (Var (Id 2)) (Var (Id 2))) (Mu (Id 3) (Var (Id 4)) (Var (Id 5)))
 -- u A . (B -> A) -> A -- left is u X . B -> (u A . X -> A)
 example3 = Mu (Id 0) (Mu (Id 1) (Var (Id 2)) (Var (Id 0))) (Var (Id 0))
+
+example4 = Mu (Id 0) (Mu (Id 1) (Var (Id 3)) (Var (Id 3))) (Mu (Id 2) (Var (Id 4)) (Var (Id 5)))
+example5 = Mu (Id 10) (Mu (Id 11) (Var (Id 13)) (Var (Id 14))) (Mu (Id 12) (Var (Id 15)) (Var (Id 16)))
+example6 = (Mu (Id 0) (Var (Id 1)) (Var (Id 1)))
+example7 = Mu (Id 10) (Var (Id 11)) (Mu (Id 12) (Var (Id 11)) (Var (Id 11)))
+example7' = Mu (Id 10) (Var (Id 1)) (Mu (Id 11) (Var (Id 1)) (Var (Id 1)))
+example8 = Mu (Id 10) (Mu (Id 11) (Var (Id 1)) (Var (Id 1))) (Mu (Id 12) (Var (Id 1)) (Var (Id 1)))
 
 
 -- everthing below here is for converting types to strings
