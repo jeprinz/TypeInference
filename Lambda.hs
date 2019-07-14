@@ -1,5 +1,6 @@
 module Lambda(
-
+    Exp,
+    Id
 ) where
 
 import Data.Map as Map

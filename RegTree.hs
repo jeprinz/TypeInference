@@ -10,6 +10,7 @@ import Data.Set as Set
 -- import Data.BiMap as BiMap
 import Data.Map as Map
 import Control.Monad.State
+import NameGiver
 
 data Id = Id Int | Idx Id Id deriving (Show, Eq, Ord)
 data RegTree = Mu Id RegTree RegTree | Var Id deriving (Show)
@@ -66,9 +67,9 @@ example3 = Mu (Id 0) (Mu (Id 1) (Var (Id 2)) (Var (Id 0))) (Var (Id 0))
 
 
 -- everthing below here is for converting types to strings
-type TypeState = State (String, Map Id Char)
+type TypeState' = TypeState Id Char
 
-typeToStringI :: RegTree -> Bool -> TypeState String
+typeToStringI :: RegTree -> Bool -> TypeState' String
 typeToStringI (Mu v t1 t2) parens = do
     prefix <- if Set.member v (freeVars t1) || Set.member v (freeVars t2)
                  then do var <- getName v
@@ -87,28 +88,28 @@ typeToStringI (Var v) _ = do name <- getName v
 typeToString :: RegTree -> String
 typeToString t = evalState (typeToStringI t False) (['A'..'Z'], Map.empty)
 
-getName :: Id -> TypeState Char
-getName v = do vars <- getMap
-               case Map.lookup v vars of
-                    Just name -> return name
-                    Nothing -> do u <- unique
-                                  putMap (Map.insert v u vars)
-                                  return u
-
-unique :: TypeState Char
-unique = do (us, vars) <- get
-            put (tail us, vars)
-            return (head us)
-
-getMap :: TypeState (Map Id Char)
-getMap = do (us, vars) <- get
-            return vars
-
-putMap :: Map Id Char -> TypeState ()
-putMap newMap = do (us, _) <- get
-                   put (us, newMap)
-                   return ()
-
-    -- case Map.lookup v vars of
-    -- Just s -> return s
-    -- Nothing -> unique
+-- getName :: Id -> TypeState Char
+-- getName v = do vars <- getMap
+--                case Map.lookup v vars of
+--                     Just name -> return name
+--                     Nothing -> do u <- unique
+--                                   putMap (Map.insert v u vars)
+--                                   return u
+--
+-- unique :: TypeState Char
+-- unique = do (us, vars) <- get
+--             put (tail us, vars)
+--             return (head us)
+--
+-- getMap :: TypeState (Map Id Char)
+-- getMap = do (us, vars) <- get
+--             return vars
+--
+-- putMap :: Map Id Char -> TypeState ()
+-- putMap newMap = do (us, _) <- get
+--                    put (us, newMap)
+--                    return ()
+--
+--     -- case Map.lookup v vars of
+--     -- Just s -> return s
+--     -- Nothing -> unique

@@ -8,10 +8,12 @@ import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Language
 import qualified Text.ParserCombinators.Parsec.Token as Token
 
+import Control.Monad.State
+
 -- This is adaped from the following tutorial:
 -- https://wiki.haskell.org/Parsing_a_simple_imperative_language
 
-data Exp = App Exp Exp | Lambda String Exp | Var String deriving(Show)
+data MedExp = App MedExp MedExp | Lambda String MedExp | Var String deriving(Show)
 
 languageDef =
   emptyDef { Token.commentStart    = "/*"
@@ -35,10 +37,10 @@ parens     = Token.parens     lexer -- parses surrounding parenthesis:
 -- integer    = Token.integer    lexer -- parses an integer
 whiteSpace = Token.whiteSpace lexer -- parses whitespace
 
-whileParser :: Parser Exp -- the main parser which calls all other ones I think
+whileParser :: Parser MedExp -- the main parser which calls all other ones I think
 whileParser = whiteSpace >> expression
 
-expression :: Parser Exp
+expression :: Parser MedExp
 expression = seqOfExpression
 
 seqOfExpression =
@@ -46,9 +48,9 @@ seqOfExpression =
      -- If there's only one statement return it without using Seq.
      return $ if length list == 1 then head list else foldl1 App list
 
-expression' :: Parser Exp
+expression' :: Parser MedExp
 expression' = (parens expression) <|> varExp <|> lamExp
--- expression :: Parser Exp
+-- expression :: Parser MedExp
 -- expression =   parens expression
 --           <|> seqOfExpression
 --
@@ -57,27 +59,33 @@ expression' = (parens expression) <|> varExp <|> lamExp
 --      -- If there's only one statement return it without using Seq.
 --      return $ if length list == 1 then head list else foldl1 App list
 --
--- expression' :: Parser Exp
+-- expression' :: Parser MedExp
 -- expression' = varExp <|> lamExp
 
-varExp :: Parser Exp
+varExp :: Parser MedExp
 varExp = do varName <- identifier
             return (Var varName)
 
-lamExp :: Parser Exp
+lamExp :: Parser MedExp
 lamExp = do reserved "l"
             varName <- identifier
             reservedOp "."
             e <- expression
             return (Lambda varName e)
 
-appExp :: Parser Exp
+appExp :: Parser MedExp
 appExp = do e1 <- expression
             e2 <- expression
             return (App e1 e2)
 
-parseString :: String -> Exp
-parseString str =
+parseMed :: String -> MedExp
+parseMed str =
   case parse whileParser "" str of
     Left e  -> error $ show e
     Right r -> r
+
+
+-- final function converts string vars to Id vars
+
+varsConvertI :: MedExp -> WithUnique Id Exp
+varsConvertI (Var )
