@@ -1,7 +1,9 @@
 module RegTree(
     RegTree,
     intersect,
-    replace
+    replace,
+    typeToString,
+    freeVars
 )where
 
 import Data.Set as Set
