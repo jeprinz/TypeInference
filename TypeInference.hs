@@ -1,5 +1,5 @@
 module TypeInference(
-
+  infer
 ) where
 
 import Lambda
@@ -8,6 +8,8 @@ import Data.Map as Map
 
 import Control.Monad.State
 import Unique
+
+import Debug.Trace
 
 type FreeVars = Map LId RegTree
 
@@ -52,12 +54,12 @@ inferI (App e1 e2) = do (e1Type, free1, subs1) <- inferI e1
 
                         return (tau', free'', subs ++ subs4)
 
--- this function is untested
+-- problem: returns wrong when given [x -> A], [x -> B]
 intersectFreeVars :: FreeVars -> FreeVars -> (FreeVars, Substitutions)
 intersectFreeVars free1 free2 =
   let only1 = difference free1 free2
       only2 = difference free2 free1
-      both = intersectionWith (\t1 t2 -> (t1, t2)) only1 only2 :: Map LId (RegTree, RegTree)
+      both = intersectionWith (\t1 t2 -> (t1, t2)) free1 free2 :: Map LId (RegTree, RegTree)
       (bothIds, bothTypes) = unzip (toList both :: [(LId, (RegTree, RegTree))])
 
       (intersectedTypes, subs) = intersectList bothTypes
@@ -68,10 +70,6 @@ intersectFreeVars free1 free2 =
       bothCombined = fromList combined
 
       result = unions [only1Subbed, only2Subbed, bothCombined]
-
-      -- intersect each thing in both, and apply substitutions to all subsequent in both as you go.
-      -- then, apply all subs to only1 and only2, merge the three maps and return that.
-      -- consider monad to do the substitutions automatically as you go.
   in (result, subs)
 
 -- This function is untested
