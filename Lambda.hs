@@ -1,10 +1,10 @@
 module Lambda(
     Exp (Var, App, Lam),
-    Id (Id)
+    LId (LId)
 ) where
 
 import Data.Map as Map
 import RegTree
 
-data Id = Id Int deriving(Show)
-data Exp = Var Id | App Exp Exp | Lam Id Exp deriving(Show)
+data LId = LId Int deriving(Show, Eq, Ord)
+data Exp = Var LId | App Exp Exp | Lam LId Exp deriving(Show)

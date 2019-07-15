@@ -1,10 +1,12 @@
 module RegTree(
-    RegTree,
+    RegTree(Mu, Var),
     intersect,
     replace,
     typeToString,
     freeVars,
-    Substitutions
+    Substitutions,
+    applySubs,
+    Id(Id, Idx)
 )where
 
 import Data.Set as Set

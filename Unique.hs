@@ -1,6 +1,7 @@
 module Unique(
   WithUnique,
-  unique
+  unique,
+  withUniques
 ) where
 
 import Control.Monad

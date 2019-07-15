@@ -89,7 +89,7 @@ parseMed str =
 
 
 -- final function converts string vars to Id vars
-type TypeState' = TypeState String Id
+type TypeState' = TypeState String LId
 
 varsConvertI :: MedExp -> TypeState' Exp
 varsConvertI (MedVar v) = do id <- getName v
@@ -103,4 +103,4 @@ varsConvertI (MedLambda v me) = do id <- getName v
 
 lambdaParse :: String -> Exp
 lambdaParse str = evalState (varsConvertI (parseMed str)) (ids, Map.empty) where
-  ids = [Id n | n <- [0..]]
+  ids = [LId n | n <- [0..]]
