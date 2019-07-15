@@ -4,8 +4,9 @@ module TypeInference(
 
 import Lambda
 import RegTree
+import Data.Map as Map
 
 type FreeVars = Map Id RegTree
 
-intersect :: FreeVars -> FreeVars -> FreeVars
-intersect = undefined
+-- intersectFreeVars :: FreeVars -> FreeVars -> (FreeVars, Substitutions)
+-- intersectFreeVars

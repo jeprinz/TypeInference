@@ -3,7 +3,8 @@ module RegTree(
     intersect,
     replace,
     typeToString,
-    freeVars
+    freeVars,
+    Substitutions
 )where
 
 import Data.Set as Set
@@ -42,10 +43,10 @@ intersectI b t1 t2 = let x = name t1
                              ((Mu _ _ _), (Mu _ _ _)) -> (Mu (Idx x y) leftSide rightSide, subs) where
                                  b' = Set.insert (Idx x y) b
                                  (leftSide', subs1) = intersectI b' (left t1) (left t2)
-                                 -- t1right = applySubs subs1 (right t1)
-                                 -- t2right = applySubs subs1 (right t2)
-                                 t1right = (right t1)
-                                 t2right = (right t2)
+                                 t1right = applySubs subs1 (right t1)
+                                 t2right = applySubs subs1 (right t2)
+                                 -- t1right = (right t1)
+                                 -- t2right = (right t2)
                                  (rightSide', subs2) = intersectI b' t1right t2right
                                  subs = subs1 ++ subs2
                                  leftSide = applySubs subs leftSide'
@@ -84,6 +85,8 @@ example6 = (Mu (Id 0) (Var (Id 1)) (Var (Id 1)))
 example7 = Mu (Id 10) (Var (Id 11)) (Mu (Id 12) (Var (Id 11)) (Var (Id 11)))
 example7' = Mu (Id 10) (Var (Id 1)) (Mu (Id 11) (Var (Id 1)) (Var (Id 1)))
 example8 = Mu (Id 10) (Mu (Id 11) (Var (Id 1)) (Var (Id 1))) (Mu (Id 12) (Var (Id 1)) (Var (Id 1)))
+
+example9 = Mu (Id 100) (Mu (Id 101) (Var (Id 1)) (Var (Id 2))) (Mu (Id 102) (Var (Id 1)) (Var (Id 3)))
 
 
 -- everthing below here is for converting types to strings
