@@ -1,5 +1,6 @@
 module LambdaParse(
-  lambdaParse
+  lambdaParse,
+  lambdaParseInfo
 )where
 
 import Lambda
@@ -104,3 +105,10 @@ varsConvertI (MedLambda v me) = do id <- getName v
 lambdaParse :: String -> Exp
 lambdaParse str = evalState (varsConvertI (parseMed str)) (ids, Map.empty) where
   ids = [LId n | n <- [0..]]
+
+lambdaParseInfo :: String -> (Exp, Map LId String)
+lambdaParseInfo str = let ids = [LId n | n <- [0..]]
+                          (e, state) = runState (varsConvertI (parseMed str)) (ids, Map.empty) where
+                          varMap = snd state
+                          reversed = fromList $ Prelude.map (\(a,b) -> (b,a)) (toList varMap)
+                      in (e, reversed)

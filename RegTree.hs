@@ -3,6 +3,7 @@ module RegTree(
     intersect,
     replace,
     typeToString,
+    typesToStrings,
     freeVars,
     Substitutions,
     applySubs,
@@ -103,7 +104,7 @@ typeToStringI (Mu v t1 t2) parens = do
     else return ""
     s1 <- typeToStringI t1 True
     s2 <- typeToStringI t2 False
-    return (if parens then (prefix ++ "(" ++ s1 ++ "->" ++ s2 ++ ")")
+    return (if parens then ("(" ++ prefix ++ s1 ++ "->" ++ s2 ++ ")")
                       else (prefix ++ s1 ++ "->" ++ s2))
 
 
@@ -112,3 +113,12 @@ typeToStringI (Var v) _ = do name <- getName v
 
 typeToString :: RegTree -> String
 typeToString t = evalState (typeToStringI t False) (['A'..'Z'], Map.empty)
+
+typesToStringsI :: [RegTree] -> TypeState' [String]
+typesToStringsI (t:ts) =
+    do s <- typeToStringI t False
+       rest <- typesToStringsI ts
+       return (s : rest)
+
+typesToStrings :: [RegTree] -> [String]
+typesToStrings ts = evalState (typesToStringsI ts) (['A'..'Z'], Map.empty)
