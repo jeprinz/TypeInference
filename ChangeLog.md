@@ -1,4 +1,4 @@
-# Revision history for type-inference
+# Revision history for duality
 
 ## 0.1.0.0  -- YYYY-mm-dd
 
