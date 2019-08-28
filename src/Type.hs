@@ -3,11 +3,12 @@ module Type(
 ) where
 
 import Data.Set as Set
+import Unique
 
 data Id = Id Int deriving (Show, Eq, Ord)
 
-data T  = Mu  Id T  | Fun  T' T | Or  T  T  | All    Id T   deriving (Show)
-data T' = Mu' Id T' | Fun' T T' | And T' T' | Exists Id T'  deriving (Show)
+data T  = Mu  Id T  | Fun  T' T | Or  T  T  | All    Id T  | Var  Id   deriving (Show)
+data T' = Mu' Id T' | Fun' T T' | And T' T' | Exists Id T' | Var' Id deriving (Show)
 
 replace :: T -> Id -> T -> T -- in arg1, replace all id with arg3
 replace = undefined
@@ -18,10 +19,15 @@ replace' t' i = dual1 tDualT' ((dual5 tDualT' replace) t' i)
 type Subs a = [(Id, a)]
 type SoFar = Set (Id, Id) -- should be (Subs T, Subs T') so can keep track of all already done?
 
-combineI :: T -> T' -> SoFar -> (Subs T, Subs T')
-combineI (Mu i t) (Mu' i' t') soFar =
+combineI :: T -> T' -> SoFar -> WithUnique Id (Subs T, Subs T')
+combineI (Mu i t) (Mu' i' t') soFar = if False then undefined else -- remember to cheeck (i,i') in soFar
   combineI (replace t i (Mu i t)) (replace' t' i' (Mu' i' t')) (insert (i, i') soFar)
 combineI (Mu i t) t' soFar = combineI (replace t i (Mu i t)) t' soFar
+combineI t (And t1' t2') soFar = do (subs1, subs1') <- combineI t t1' soFar
+                                    (subs2, subs2') <- combineI t t2' soFar
+                                    return (subs1 ++ subs2, subs1' ++ subs2')
+combineI (All i t) t' soFar = do newI <- unique
+                                 combineI (replace t i (Var newI)) t' soFar-- TODO: need to replace both T and T' versions of i
 combineI t t' soFar = dual5 t'DualT ((dual5 tDualT' combineI) t') t soFar
 --------------------------------------------------------------------------------
 
