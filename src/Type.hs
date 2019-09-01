@@ -71,7 +71,7 @@ combine t t' = combineI t t' Set.empty
 --- very important TODO: when are mu's added in? the Var and Var' cases need to add on a
 --- Mu to the result so that it works.
 combineI :: T -> T' -> SoFar -> WithUnique Id (Subs T, Subs T')
-combineI t (Var' i) soFar = combineI' t (Var' i) soFar -- TODO: think about why/if this needs to be before next case
+combineI t (Var' i) soFar = return ([(i, t)], []) -- TODO: think about why/if this needs to be before next case
 combineI (Var i) t' soFar = return ([], [(i, t')])
 combineI (Mu i t) (Mu' i' t') soFar = if member (i, i') soFar then return ([],[]) else
   combineI (replace t i (Mu i t)) (replace' t' i' (Mu' i' t')) (insert (i, i') soFar)
@@ -88,10 +88,10 @@ combineI (All i t) t' soFar = do newI <- unique
                                  combineI newT t' soFar
 combineI t (Exists i t') soFar = combineI' t (Exists i t') soFar
 combineI (Fun left1 right1) (Fun' left2 right2) soFar = -- when we combine two functions, combine respective left and right sides
-  do (subs, subs') <- combineI left2 left1 soFar -- combine the lefts
+  do (subs, subs') <- combineI left2 left1 soFar -- combine the lefts -- TODO: somehow never finishes...
      let right1new = replaceAll2 subs' (replaceAll subs right1) -- apply substitutions to right sides before combining them
      let right2new = replaceAll2' subs' (replaceAll' subs right2)
-     (subs2, subs2') <- combineI right1 right2 soFar
+     (subs2, subs2') <- combineI right1new right2new soFar
      return (subs ++ subs2, subs' ++ subs2')
 
 combineI' :: T -> T' -> SoFar -> WithUnique Id (Subs T, Subs T')
